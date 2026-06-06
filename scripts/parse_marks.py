@@ -4,10 +4,16 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import re
 
-CAPTURE_DIR = Path("portal_captures")
+ROOT = Path.cwd()
+CAPTURE_DIR = ROOT / "data" / "raw" / "portal_captures"
+OUTPUT_PATH = ROOT / "data" / "summaries" / "scraped_marks_summary.csv"
+
+OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+
 
 def clean(text):
     return " ".join(str(text).replace("\xa0", " ").split())
+
 
 def to_number(value):
     value = clean(value)
@@ -20,6 +26,7 @@ def to_number(value):
     except:
         return 0
 
+
 def extract_total_marks(value):
     value = clean(value)
     match = re.search(r"([\d.]+)\s*/\s*100\s*\((\d+)%\)", value)
@@ -28,6 +35,7 @@ def extract_total_marks(value):
         return float(match.group(1)), float(match.group(2))
 
     return 0, 0
+
 
 def extract_course_info(soup):
     course = ""
@@ -49,6 +57,7 @@ def extract_course_info(soup):
             instructor = cells[1]
 
     return course, instructor, program, section
+
 
 def parse_result_file(file_path):
     html = file_path.read_text(encoding="utf-8", errors="ignore")
@@ -110,28 +119,26 @@ def parse_result_file(file_path):
         "reason": reason
     }
 
-def main():
+
+def run_marks_parser():
     result_files = sorted(CAPTURE_DIR.glob("results_[0-9]*_*.html"))
 
     if not result_files:
-        print("No result detail files found.")
-        return
+        raise FileNotFoundError("No result detail files found. Run scraper first.")
 
-    rows = []
-
-    for file_path in result_files:
-        rows.append(parse_result_file(file_path))
+    rows = [parse_result_file(file_path) for file_path in result_files]
 
     df = pd.DataFrame(rows)
 
     df["marks_risk"] = df["current_marks_percentage"].apply(
-        lambda x: "High Risk" if x < 50 else "Warning" if x < 65 else "Safe"
+        lambda x: "High Risk" if x < 55 else "Safe"
     )
 
-    df.to_csv("scraped_marks_summary.csv", index=False)
+    df.to_csv(OUTPUT_PATH, index=False)
 
-    print("Saved scraped_marks_summary.csv")
-    print(df)
+    print(f"Saved {OUTPUT_PATH}")
+    return df
+
 
 if __name__ == "__main__":
-    main()
+    run_marks_parser()

@@ -3,10 +3,16 @@ from pathlib import Path
 from bs4 import BeautifulSoup
 import pandas as pd
 
-CAPTURE_DIR = Path("portal_captures")
+ROOT = Path.cwd()
+CAPTURE_DIR = ROOT / "data" / "raw" / "portal_captures"
+OUTPUT_PATH = ROOT / "data" / "summaries" / "scraped_attendance_summary.csv"
+
+OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+
 
 def clean(text):
-    return " ".join(text.replace("\xa0", " ").split())
+    return " ".join(str(text).replace("\xa0", " ").split())
+
 
 def extract_course_info(soup):
     course = ""
@@ -14,9 +20,7 @@ def extract_course_info(soup):
     program = ""
     section = ""
 
-    rows = soup.find_all("tr")
-
-    for row in rows:
+    for row in soup.find_all("tr"):
         cells = [clean(cell.get_text(" ")) for cell in row.find_all(["td", "th"])]
 
         if len(cells) >= 4 and "Program:" in cells[0]:
@@ -30,6 +34,7 @@ def extract_course_info(soup):
             instructor = cells[1]
 
     return course, instructor, program, section
+
 
 def parse_attendance_file(file_path):
     html = file_path.read_text(encoding="utf-8", errors="ignore")
@@ -73,28 +78,26 @@ def parse_attendance_file(file_path):
         "attendance_percentage": attendance_percentage
     }
 
-def main():
+
+def run_attendance_parser():
     attendance_files = sorted(CAPTURE_DIR.glob("attendance_[0-9]*_*.html"))
 
     if not attendance_files:
-        print("No attendance detail files found.")
-        return
+        raise FileNotFoundError("No attendance detail files found. Run scraper first.")
 
-    rows = []
-
-    for file_path in attendance_files:
-        rows.append(parse_attendance_file(file_path))
+    rows = [parse_attendance_file(file_path) for file_path in attendance_files]
 
     df = pd.DataFrame(rows)
 
     df["attendance_risk"] = df["attendance_percentage"].apply(
-        lambda x: "High Risk" if x < 75 else "Warning" if x < 80 else "Safe"
+        lambda x: "High Risk" if x < 80 else "Safe"
     )
 
-    df.to_csv("scraped_attendance_summary.csv", index=False)
+    df.to_csv(OUTPUT_PATH, index=False)
 
-    print("Saved scraped_attendance_summary.csv")
-    print(df)
+    print(f"Saved {OUTPUT_PATH}")
+    return df
+
 
 if __name__ == "__main__":
-    main()
+    run_attendance_parser()
