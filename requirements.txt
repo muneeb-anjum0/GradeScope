@@ -1,0 +1,6 @@
+pandas
+numpy
+matplotlib
+beautifulsoup4
+playwright
+python-dotenv
