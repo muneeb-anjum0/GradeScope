@@ -1,9 +1,0 @@
-subject,instructor,program,section,total_lectures,total_present,total_absent,total_late,attendance_percentage,attendance_risk
-Professional Practices,Naveed Ahmad,BSSE-6,A,29,24,5,0,82.76,Safe
-Artificial Intelligence,Muhammad Qasim,BSSE-6,A,22,12,10,0,54.55,High Risk
-Formal Methods in Software Engineering,Arfa Asaf,BSSE-6,A,29,20,9,0,68.97,High Risk
-Web Engineering,Muhammad Abuzar Chandia,BSSE-6,A,14,14,0,0,100.0,Safe
-Information Security,Safi Ullah -,BSSE-6,A,28,26,2,0,92.86,Safe
-Teachings of Holy Quran,Dr. Hafiz Javed Ahmad,BSSE-6,A,14,7,7,0,50.0,High Risk
-Software Construction and Development,Tooba Abdul Qudoos Khan,BSSE-5,A,15,11,3,1,80.0,Safe
-Lab: Software Construction and Development,Jawad Naseer -,BSSE-5,A,13,10,3,0,76.92,High Risk
