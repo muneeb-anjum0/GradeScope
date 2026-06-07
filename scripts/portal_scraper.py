@@ -1,6 +1,8 @@
 import re
 from pathlib import Path
 from playwright.sync_api import sync_playwright, Error as PlaywrightError
+import os
+os.system("playwright install chromium")
 
 PORTAL_URL = "https://springzabdesk.szabist-isb.edu.pk/"
 BASE_URL = "https://springzabdesk.szabist-isb.edu.pk"
@@ -236,7 +238,7 @@ def run_scraper():
     reset_previous_run()
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False)
+        browser = p.chromium.launch(headless=True)
         page = browser.new_page(viewport={"width": 1440, "height": 940})
 
         log("Opening ZABDesk portal...")
