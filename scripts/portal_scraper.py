@@ -238,7 +238,7 @@ def run_scraper():
     reset_previous_run()
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        browser = p.chromium.launch(headless=False)
         page = browser.new_page(viewport={"width": 1440, "height": 940})
 
         log("Opening ZABDesk portal...")
