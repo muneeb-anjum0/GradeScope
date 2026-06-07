@@ -1,6 +1,8 @@
 import re
 from pathlib import Path
 from playwright.sync_api import sync_playwright, Error as PlaywrightError
+import os
+os.system("playwright install chromium")
 
 PORTAL_URL = "https://springzabdesk.szabist-isb.edu.pk/"
 BASE_URL = "https://springzabdesk.szabist-isb.edu.pk"

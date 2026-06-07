@@ -22,7 +22,6 @@ GradeScope runs locally. It does not require portal credentials inside the code,
 * [Project Structure](#project-structure)
 * [Important Files](#important-files)
 * [Tech Stack](#tech-stack)
-* [Privacy and Safety](#privacy-and-safety)
 * [Current Status](#current-status)
 * [Possible Improvements](#possible-improvements)
 * [Disclaimer](#disclaimer)
@@ -353,39 +352,7 @@ These files should not be uploaded publicly unless sanitized.
 
 ---
 
-# Privacy and Safety
 
-GradeScope is designed to run locally.
-
-Do not publish:
-
-* ZABDESK login credentials
-* Real student screenshots
-* Raw HTML captures
-* Raw text dumps
-* Private academic CSV files
-* `.env` files
-* Personal portal data
-
-Recommended `.gitignore` entries:
-
-```text
-.env
-.venv/
-__pycache__/
-*.pyc
-data/raw/
-data/summaries/
-assets/screenshots/
-portal_captures/
-text_dumps/
-*.html
-*.pkl
-```
-
-If this project is being pushed to GitHub, only demo or sanitized data should be included.
-
----
 
 # Current Status
 
