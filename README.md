@@ -353,39 +353,7 @@ These files should not be uploaded publicly unless sanitized.
 
 ---
 
-# Privacy and Safety
 
-GradeScope is designed to run locally.
-
-Do not publish:
-
-* ZABDESK login credentials
-* Real student screenshots
-* Raw HTML captures
-* Raw text dumps
-* Private academic CSV files
-* `.env` files
-* Personal portal data
-
-Recommended `.gitignore` entries:
-
-```text
-.env
-.venv/
-__pycache__/
-*.pyc
-data/raw/
-data/summaries/
-assets/screenshots/
-portal_captures/
-text_dumps/
-*.html
-*.pkl
-```
-
-If this project is being pushed to GitHub, only demo or sanitized data should be included.
-
----
 
 # Current Status
 
