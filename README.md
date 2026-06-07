@@ -22,7 +22,6 @@ GradeScope runs locally. It does not require portal credentials inside the code,
 * [Project Structure](#project-structure)
 * [Important Files](#important-files)
 * [Tech Stack](#tech-stack)
-* [Privacy and Safety](#privacy-and-safety)
 * [Current Status](#current-status)
 * [Possible Improvements](#possible-improvements)
 * [Disclaimer](#disclaimer)
