@@ -1,0 +1,6 @@
+subject,attendance_percentage,total_present,total_absent,quiz_marks,assignment_marks,mid_marks,final_marks,total_obtained_marks,current_marks_percentage,risk_score,risk_status,recommendation
+Information Security,82,23,5,8,9,21,0,38,38.0,43,Warning,"Marks are weak. Focus strongly on quizzes, assignments, and final preparation."
+Software Construction,74,20,7,7,8,19,0,34,34.0,91,High Risk,"Attendance is below 75%. Attend every upcoming class. Marks are weak. Focus strongly on quizzes, assignments, and final preparation."
+Database Systems,68,17,8,6,7,16,0,29,28.999999999999996,98,High Risk,"Attendance is below 75%. Attend every upcoming class. Marks are weak. Focus strongly on quizzes, assignments, and final preparation. Too many absents. Attendance risk is serious."
+Artificial Intelligence,91,29,3,9,10,24,0,43,43.0,35,Warning,"Marks are weak. Focus strongly on quizzes, assignments, and final preparation."
+Computer Networks,59,13,9,5,6,14,0,25,25.0,105,High Risk,"Attendance is below 75%. Attend every upcoming class. Marks are weak. Focus strongly on quizzes, assignments, and final preparation. Mid marks are low. Revise weak topics before final exam. Too many absents. Attendance risk is serious."
