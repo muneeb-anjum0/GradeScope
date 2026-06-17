@@ -10,10 +10,10 @@ Before uploading to GitHub, verify that these are not uploaded:
 - Raw private academic files
 - Login credentials
 
-Use only:
+Safe to upload:
 
-- `data/processed/demo_gradescope_dashboard.csv`
-- generated charts
 - scripts
 - notebooks
 - README
+- frontend and backend source code
+- docs

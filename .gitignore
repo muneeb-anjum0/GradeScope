@@ -3,14 +3,20 @@
 __pycache__/
 .ipynb_checkpoints/
 
-data/raw/
-data/summaries/
-data/processed/final_scraped_academic_dashboard.csv
+backend/**/__pycache__/
+backend/data/raw/
+backend/data/summaries/
+backend/data/processed/*.csv
 
-assets/screenshots/
+backend/assets/charts/
+backend/assets/reports/
+backend/assets/screenshots/
 
 *.htm
 *.html
-!assets/reports/gradescope_report.html
+!frontend/index.html
 
-GradeScope_Public_Release.zip
+frontend/node_modules/
+frontend/dist/
+
+archive/

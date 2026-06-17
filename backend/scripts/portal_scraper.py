@@ -1,11 +1,12 @@
 import re
 from pathlib import Path
 from playwright.sync_api import sync_playwright, Error as PlaywrightError
-import os
-os.system("playwright install chromium")
 
 PORTAL_URL = "https://springzabdesk.szabist-isb.edu.pk/"
 BASE_URL = "https://springzabdesk.szabist-isb.edu.pk"
+NAV_TIMEOUT_MS = 45000
+ACTION_TIMEOUT_MS = 10000
+SETTLE_MS = 120
 
 ROOT = Path(__file__).resolve().parents[1]
 RAW_DIR = ROOT / "data" / "raw"
@@ -51,7 +52,7 @@ def absolute_url(href):
 
 def extract_visible_text(page):
     try:
-        return page.locator("body").inner_text(timeout=5000)
+        return page.evaluate("document.body ? document.body.innerText : ''")
     except Exception:
         return ""
 
@@ -97,8 +98,16 @@ def wait_for_login(page):
 
 
 def get_link_href(page, text_value):
-    locator = page.locator("a", has_text=text_value).first
-    href = locator.get_attribute("href")
+    href = page.eval_on_selector_all(
+        "a",
+        """
+        (links, textValue) => {
+            const link = links.find((item) => item.innerText.includes(textValue));
+            return link ? link.getAttribute("href") : null;
+        }
+        """,
+        text_value,
+    )
 
     if not href:
         raise ValueError(f"Could not find href for: {text_value}")
@@ -107,31 +116,37 @@ def get_link_href(page, text_value):
 
 
 def get_course_links(page):
-    course_names = []
-    links = page.locator("a").all()
+    return page.eval_on_selector_all(
+        "a",
+        """
+        (links) => {
+            const names = [];
+            for (const link of links) {
+                const text = link.innerText.trim();
+                const href = link.getAttribute("href") || "";
 
-    for link in links:
-        text = link.inner_text().strip()
-        href = link.get_attribute("href")
-
-        if href and "chkSubmit" in href and text and text not in course_names:
-            course_names.append(text)
-
-    return course_names
+                if (href.includes("chkSubmit") && text && !names.includes(text)) {
+                    names.push(text);
+                }
+            }
+            return names;
+        }
+        """,
+    )
 
 
 def open_course_detail(page, course_name):
     course_link = page.locator("a", has_text=course_name).first
     course_link.click()
     page.wait_for_load_state("domcontentloaded")
-    page.wait_for_timeout(700)
+    page.wait_for_timeout(SETTLE_MS)
 
 
 def capture_course_details(page, main_url, page_type):
     log(f"Opening {page_type} main page...")
 
     page.goto(main_url, wait_until="domcontentloaded")
-    page.wait_for_timeout(900)
+    page.wait_for_timeout(SETTLE_MS)
 
     save_page_artifacts(page, f"{page_type}_main_page")
 
@@ -143,7 +158,7 @@ def capture_course_details(page, main_url, page_type):
         log(f"{page_type.upper()} {index}/{len(courses)} -> {course_name}")
 
         page.goto(main_url, wait_until="domcontentloaded")
-        page.wait_for_timeout(500)
+        page.wait_for_timeout(SETTLE_MS)
 
         open_course_detail(page, course_name)
         save_page_artifacts(page, f"{page_type}_{index}_{safe_name}")
@@ -152,24 +167,18 @@ def capture_course_details(page, main_url, page_type):
 
 
 def get_select_options(page):
-    select = page.locator("select").first
-    options = select.locator("option").all()
-
-    semester_options = []
-
-    for option in options:
-        label = option.inner_text().strip()
-        value = option.get_attribute("value")
-
-        if label and "select" not in label.lower():
-            semester_options.append(
-                {
-                    "label": label,
-                    "value": value if value else label,
-                }
-            )
-
-    return semester_options
+    return page.eval_on_selector_all(
+        "select option",
+        """
+        (options) => options
+            .map((option) => {
+                const label = option.innerText.trim();
+                const value = option.getAttribute("value") || label;
+                return { label, value };
+            })
+            .filter((option) => option.label && !option.label.toLowerCase().includes("select"))
+        """,
+    )
 
 
 def submit_previous_semester_form(page):
@@ -186,19 +195,19 @@ def submit_previous_semester_form(page):
         if locator.count() > 0:
             locator.first.click()
             page.wait_for_load_state("domcontentloaded")
-            page.wait_for_timeout(900)
+            page.wait_for_timeout(SETTLE_MS)
             return
 
     page.keyboard.press("Enter")
     page.wait_for_load_state("domcontentloaded")
-    page.wait_for_timeout(900)
+    page.wait_for_timeout(SETTLE_MS)
 
 
 def capture_previous_semester_results(page, previous_url):
     log("Opening previous semester results page...")
 
     page.goto(previous_url, wait_until="domcontentloaded")
-    page.wait_for_timeout(1000)
+    page.wait_for_timeout(SETTLE_MS)
 
     save_page_artifacts(page, "previous_semester_selector_page")
 
@@ -217,7 +226,7 @@ def capture_previous_semester_results(page, previous_url):
         log(f"PREVIOUS GPA {index}/{len(options)} -> {semester_label}")
 
         page.goto(previous_url, wait_until="domcontentloaded")
-        page.wait_for_timeout(700)
+        page.wait_for_timeout(SETTLE_MS)
 
         select = page.locator("select").first
 
@@ -226,7 +235,7 @@ def capture_previous_semester_results(page, previous_url):
         except Exception:
             select.select_option(value=semester_value)
 
-        page.wait_for_timeout(300)
+        page.wait_for_timeout(SETTLE_MS)
         submit_previous_semester_form(page)
 
         save_page_artifacts(page, f"previous_semester_result_{index}_{safe_semester}")
@@ -239,7 +248,16 @@ def run_scraper():
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=False)
-        page = browser.new_page(viewport={"width": 1440, "height": 940})
+        context = browser.new_context(viewport={"width": 1440, "height": 940})
+        context.set_default_timeout(ACTION_TIMEOUT_MS)
+        context.set_default_navigation_timeout(NAV_TIMEOUT_MS)
+        context.route(
+            "**/*",
+            lambda route: route.abort()
+            if route.request.resource_type in {"image", "font", "media"}
+            else route.continue_(),
+        )
+        page = context.new_page()
 
         log("Opening ZABDesk portal...")
         page.goto(PORTAL_URL, wait_until="domcontentloaded")
@@ -260,6 +278,7 @@ def run_scraper():
         capture_course_details(page, current_results_url, "results")
         capture_previous_semester_results(page, previous_results_url)
 
+        context.close()
         browser.close()
         log("Portal sync finished successfully.")
 

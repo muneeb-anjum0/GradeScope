@@ -1575,9 +1575,18 @@ def render_sync():
         if not run_step("Step 5 | Build Dataset", [sys.executable, "scripts/merge_dashboard.py"]):
             return
 
+        if not FINAL_DATA_PATH.exists() or load_csv(FINAL_DATA_PATH).empty:
+            st.error("Sync finished, but the dashboard dataset was not created. Check the Step 5 log above.")
+            return
+
         mark_data_loaded()
-        st.success("Sync completed. Open the dashboard to view refreshed data.")
-        st.balloons()
+        try:
+            st.cache_data.clear()
+        except Exception:
+            pass
+        st.toast("Sync completed. Dashboard refreshed.")
+        st.session_state.page = "dashboard"
+        st.rerun()
 
 
 def render_raw():
