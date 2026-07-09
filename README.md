@@ -10,6 +10,8 @@ It combines a FastAPI backend, a React/Vite frontend, and a portal sync flow tha
 start-all.bat
 ```
 
+On a fresh download, `start-all.bat` creates the Python virtual environment, installs backend dependencies, installs frontend dependencies, and downloads Playwright Chromium before starting the app. If setup fails, the launcher keeps the window open so the error can be read.
+
 Open:
 
 ```text

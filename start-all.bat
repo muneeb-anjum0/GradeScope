@@ -4,7 +4,13 @@ setlocal
 set "ROOT=%~dp0"
 
 powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$bat = '%~f0'; $root = '%ROOT%'; $content = Get-Content -Raw -LiteralPath $bat; $script = ($content -split '### POWERSHELL_START ###')[-1]; $tmp = Join-Path $env:TEMP ('gradescope-start-' + [guid]::NewGuid().ToString() + '.ps1'); Set-Content -LiteralPath $tmp -Value $script -Encoding UTF8; try { & $tmp -Root $root } finally { Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue }"
-exit /b %ERRORLEVEL%
+set "EXIT_CODE=%ERRORLEVEL%"
+if not "%EXIT_CODE%"=="0" (
+    echo.
+    echo GradeScope failed to start. See the error above.
+    pause
+)
+exit /b %EXIT_CODE%
 
 ### POWERSHELL_START ###
 param(
@@ -17,6 +23,8 @@ $rootPath = (Resolve-Path -LiteralPath $Root).Path
 $backendPath = Join-Path $rootPath "backend"
 $frontendPath = Join-Path $rootPath "frontend"
 $venvPython = Join-Path $rootPath ".venv\Scripts\python.exe"
+$requirementsPath = Join-Path $backendPath "requirements.txt"
+$nodeModulesPath = Join-Path $frontendPath "node_modules"
 
 Add-Type -TypeDefinition @"
 using System;
@@ -279,6 +287,71 @@ function Stop-TrackedProcesses {
     }
 }
 
+function Invoke-LoggedCommand {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Label,
+        [Parameter(Mandatory = $true)]
+        [string]$FilePath,
+        [string[]]$ArgumentList = @(),
+        [string]$WorkingDirectory = $rootPath
+    )
+
+    Write-Host $Label
+    $process = Start-Process -FilePath $FilePath -ArgumentList $ArgumentList -WorkingDirectory $WorkingDirectory -NoNewWindow -Wait -PassThru
+    if ($process.ExitCode -ne 0) {
+        throw "$Label failed with exit code $($process.ExitCode)."
+    }
+}
+
+function New-GradeScopeVenv {
+    $pyLauncher = Get-Command "py.exe" -ErrorAction SilentlyContinue
+    if ($pyLauncher) {
+        Invoke-LoggedCommand -Label "Creating Python virtual environment..." -FilePath $pyLauncher.Source -ArgumentList @("-3", "-m", "venv", (Join-Path $rootPath ".venv"))
+        return
+    }
+
+    $python = Get-Command "python.exe" -ErrorAction SilentlyContinue
+    if ($python) {
+        Invoke-LoggedCommand -Label "Creating Python virtual environment..." -FilePath $python.Source -ArgumentList @("-m", "venv", (Join-Path $rootPath ".venv"))
+        return
+    }
+
+    throw "Python was not found. Install Python 3, then run start-all.bat again."
+}
+
+function Ensure-BackendDependencies {
+    if (-not (Test-Path -LiteralPath $venvPython)) {
+        New-GradeScopeVenv
+    }
+
+    if (-not (Test-Path -LiteralPath $venvPython)) {
+        throw "Python virtual environment was not created at $venvPython."
+    }
+
+    if (-not (Test-Path -LiteralPath $requirementsPath)) {
+        throw "Backend requirements file was not found: $requirementsPath"
+    }
+
+    Invoke-LoggedCommand -Label "Installing backend dependencies..." -FilePath $venvPython -ArgumentList @("-m", "pip", "install", "-r", $requirementsPath)
+    Invoke-LoggedCommand -Label "Checking Playwright Chromium..." -FilePath $venvPython -ArgumentList @("-m", "playwright", "install", "chromium")
+}
+
+function Ensure-FrontendDependencies {
+    $npm = Get-Command "npm.cmd" -ErrorAction SilentlyContinue
+    if (-not $npm) {
+        $npm = Get-Command "npm.exe" -ErrorAction SilentlyContinue
+    }
+
+    if (-not $npm) {
+        throw "npm was not found. Install Node.js LTS, then run start-all.bat again."
+    }
+
+    if (-not (Test-Path -LiteralPath $nodeModulesPath)) {
+        Invoke-LoggedCommand -Label "Installing frontend dependencies..." -FilePath $npm.Source -ArgumentList @("install") -WorkingDirectory $frontendPath
+    }
+}
+
 if (-not (Test-Path -LiteralPath $backendPath)) {
     throw "Backend folder not found: $backendPath"
 }
@@ -287,15 +360,8 @@ if (-not (Test-Path -LiteralPath $frontendPath)) {
     throw "Frontend folder not found: $frontendPath"
 }
 
-if (-not (Test-Path -LiteralPath $venvPython)) {
-    throw "Python virtual environment was not found at $venvPython. Create it with: python -m venv .venv"
-}
-
-Write-Host "Checking Playwright Chromium..."
-& $venvPython -m playwright install chromium
-if ($LASTEXITCODE -ne 0) {
-    throw "Could not install Playwright Chromium. Run manually: .\.venv\Scripts\python.exe -m playwright install chromium"
-}
+Ensure-BackendDependencies
+Ensure-FrontendDependencies
 
 $job = [IntPtr]::Zero
 $processes = @()
