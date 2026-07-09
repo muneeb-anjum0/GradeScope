@@ -291,6 +291,12 @@ if (-not (Test-Path -LiteralPath $venvPython)) {
     throw "Python virtual environment was not found at $venvPython. Create it with: python -m venv .venv"
 }
 
+Write-Host "Checking Playwright Chromium..."
+& $venvPython -m playwright install chromium
+if ($LASTEXITCODE -ne 0) {
+    throw "Could not install Playwright Chromium. Run manually: .\.venv\Scripts\python.exe -m playwright install chromium"
+}
+
 $job = [IntPtr]::Zero
 $processes = @()
 $assignedProcessIds = @{}

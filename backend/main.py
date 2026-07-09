@@ -51,7 +51,30 @@ def file_status(path: Path) -> dict:
     }
 
 
+def ensure_playwright_chromium() -> dict | None:
+    process = subprocess.run(
+        [sys.executable, "-m", "playwright", "install", "chromium"],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+    )
+    output = (process.stdout or "") + (process.stderr or "")
+    if process.returncode == 0:
+        return None
+
+    return {
+        "script": "playwright install chromium",
+        "returncode": process.returncode,
+        "output": output,
+    }
+
+
 def run_script(script_name: str) -> dict:
+    if script_name == "portal_scraper.py":
+        install_result = ensure_playwright_chromium()
+        if install_result:
+            return install_result
+
     process = subprocess.run(
         [sys.executable, str(ROOT / "scripts" / script_name)],
         cwd=ROOT,

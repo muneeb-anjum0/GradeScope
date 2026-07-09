@@ -28,6 +28,12 @@ http://127.0.0.1:8000
 
 The sync browser blocks unnecessary assets and saves only the HTML/text needed for parsing.
 
+Playwright needs a separate Chromium browser download in addition to the Python package. `start-all.bat` checks this automatically, and `/api/sync` also runs the same check before opening the portal browser. If you ever need to repair it manually, run:
+
+```powershell
+.\.venv\Scripts\python.exe -m playwright install chromium
+```
+
 ## API
 
 ```text
